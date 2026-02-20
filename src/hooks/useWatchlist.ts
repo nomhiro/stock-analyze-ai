@@ -1,42 +1,88 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useCallback, useSyncExternalStore } from "react";
+import { DEFAULT_WATCHLIST_SYMBOLS } from "@/lib/data/default-watchlist";
 
 const STORAGE_KEY = "stock-analyzer-watchlist";
 
-export function useWatchlist() {
-  const [symbols, setSymbols] = useState<string[]>([]);
+let listeners: Array<() => void> = [];
+let cachedSymbols: string[] | null = null;
+let cachedRaw: string | null | undefined = undefined;
 
-  useEffect(() => {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored) {
-      try {
-        setSymbols(JSON.parse(stored));
-      } catch {
-        setSymbols([]);
-      }
+function emitChange() {
+  cachedSymbols = null;
+  cachedRaw = undefined;
+  for (const listener of listeners) {
+    listener();
+  }
+}
+
+function subscribe(listener: () => void) {
+  listeners = [...listeners, listener];
+  return () => {
+    listeners = listeners.filter((l) => l !== listener);
+  };
+}
+
+function getSnapshot(): string[] {
+  const raw = localStorage.getItem(STORAGE_KEY);
+
+  if (raw === cachedRaw && cachedSymbols !== null) {
+    return cachedSymbols;
+  }
+
+  let result: string[];
+  if (raw === null) {
+    // 初回訪問: デフォルト銘柄で初期化
+    result = [...DEFAULT_WATCHLIST_SYMBOLS];
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(result));
+    cachedRaw = localStorage.getItem(STORAGE_KEY);
+  } else {
+    cachedRaw = raw;
+    try {
+      result = JSON.parse(raw);
+    } catch {
+      result = [];
     }
-  }, []);
+  }
 
-  const save = useCallback((next: string[]) => {
-    setSymbols(next);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
-  }, []);
+  cachedSymbols = result;
+  return result;
+}
+
+const serverSnapshot: string[] = [];
+function getServerSnapshot(): string[] {
+  return serverSnapshot;
+}
+
+function saveToStorage(next: string[]) {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+  cachedSymbols = null;
+  cachedRaw = undefined;
+  emitChange();
+}
+
+export function useWatchlist() {
+  const symbols = useSyncExternalStore(
+    subscribe,
+    getSnapshot,
+    getServerSnapshot,
+  );
 
   const add = useCallback(
     (symbol: string) => {
       if (!symbols.includes(symbol)) {
-        save([...symbols, symbol]);
+        saveToStorage([...symbols, symbol]);
       }
     },
-    [symbols, save],
+    [symbols],
   );
 
   const remove = useCallback(
     (symbol: string) => {
-      save(symbols.filter((s) => s !== symbol));
+      saveToStorage(symbols.filter((s) => s !== symbol));
     },
-    [symbols, save],
+    [symbols],
   );
 
   const has = useCallback(

@@ -1,5 +1,13 @@
 import YahooFinance from "yahoo-finance2";
-const yahooFinance = new YahooFinance();
+
+let yahooFinanceInstance: InstanceType<typeof YahooFinance> | null = null;
+
+function getYahooFinance(): InstanceType<typeof YahooFinance> {
+  if (!yahooFinanceInstance) {
+    yahooFinanceInstance = new YahooFinance();
+  }
+  return yahooFinanceInstance;
+}
 import type {
   StockQuote,
   StockHistoryEntry,
@@ -13,7 +21,7 @@ function safeGet(obj: any, key: string): any {
 }
 
 export async function getQuote(symbol: string): Promise<StockQuote> {
-  const quote = await yahooFinance.quote(symbol);
+  const quote = await getYahooFinance().quote(symbol);
   return mapQuote(quote, symbol);
 }
 
@@ -61,7 +69,7 @@ export async function getQuotes(symbols: string[]): Promise<StockQuote[]> {
   if (symbols.length === 0) return [];
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const results = (await yahooFinance.quote(symbols)) as any[];
+  const results = (await getYahooFinance().quote(symbols)) as any[];
 
   return results.map((quote) => mapQuote(quote));
 }
@@ -73,7 +81,7 @@ export async function getHistory(
   interval: HistoryInterval = "1d",
 ): Promise<StockHistoryEntry[]> {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const result: any = await yahooFinance.chart(symbol, {
+  const result: any = await getYahooFinance().chart(symbol, {
     period1,
     period2: period2 || new Date().toISOString().split("T")[0],
     interval,
@@ -96,7 +104,7 @@ export async function searchStocks(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let result: any;
   try {
-    result = await yahooFinance.search(query);
+    result = await getYahooFinance().search(query);
   } catch (error: unknown) {
     // Yahoo Finance API rejects non-ASCII (e.g. Japanese) queries with BadRequestError
     if (

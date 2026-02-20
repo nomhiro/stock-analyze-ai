@@ -98,7 +98,13 @@
       "Bash(npx next build:*)",
       "Bash(npm ls:*)",
       "Bash(npm test:*)",
-      "Bash(node -e:*)"
+      "Bash(node -e:*)",
+      "mcp__claude_ai_Microsoft_Learn__microsoft_docs_fetch",
+      "WebFetch(domain:github.com)",
+      "Bash(npm run build:*)",
+      "Bash(npm run lint:*)",
+      "Bash(gh api:*)",
+      "Bash(python3:*)"
     ]
   },
   "enableAllProjectMcpServers": true,

@@ -4,8 +4,11 @@ import { MarketOverview } from "@/components/stocks/MarketOverview";
 import { MarketRanking } from "@/components/stocks/MarketRanking";
 import { StockWatchlist } from "@/components/stocks/StockWatchlist";
 import { StockSearchBar } from "@/components/stocks/StockSearchBar";
+import { useWatchlist } from "@/hooks/useWatchlist";
 
 export default function DashboardPage() {
+  const { symbols, remove } = useWatchlist();
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -13,8 +16,8 @@ export default function DashboardPage() {
         <StockSearchBar />
       </div>
       <MarketOverview />
-      <MarketRanking />
-      <StockWatchlist />
+      <MarketRanking symbols={symbols} />
+      <StockWatchlist symbols={symbols} onRemove={remove} />
     </div>
   );
 }

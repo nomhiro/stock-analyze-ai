@@ -54,8 +54,25 @@ function RankingList({
   );
 }
 
-export function MarketRanking() {
-  const { ranking, isLoading, refresh } = useMarketRanking(5);
+interface MarketRankingProps {
+  symbols: string[];
+}
+
+export function MarketRanking({ symbols }: MarketRankingProps) {
+  const { ranking, isLoading, refresh, isEmpty } = useMarketRanking(
+    symbols,
+    5,
+  );
+
+  if (isEmpty) {
+    return (
+      <Card title="ウォッチリスト ランキング">
+        <p className="text-sm text-muted">
+          ウォッチリストに銘柄を追加すると、値上がり・値下がりランキングが表示されます。
+        </p>
+      </Card>
+    );
+  }
 
   return (
     <div className="grid grid-cols-1 gap-4 md:grid-cols-2">

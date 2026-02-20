@@ -4,10 +4,6 @@ vi.mock("@/lib/yahoo-finance", () => ({
   getQuotes: vi.fn(),
 }));
 
-vi.mock("@/lib/data/stock-master", () => ({
-  masterSymbols: ["7203.T", "6758.T"],
-}));
-
 import { GET } from "./route";
 import { getQuotes } from "@/lib/yahoo-finance";
 import { NextRequest } from "next/server";
@@ -46,26 +42,21 @@ describe("GET /api/stocks/quotes", () => {
     vi.clearAllMocks();
   });
 
-  it("パラメータなしでマスター全銘柄を返す", async () => {
+  it("symbols パラメータなしで 400 を返す", async () => {
+    const res = await GET(createRequest("/api/stocks/quotes"));
+    expect(res.status).toBe(400);
+  });
+
+  it("symbols パラメータで指定銘柄を返す", async () => {
     mockGetQuotes.mockResolvedValue(sampleQuotes);
 
-    const res = await GET(createRequest("/api/stocks/quotes"));
+    const res = await GET(
+      createRequest("/api/stocks/quotes?symbols=7203.T,6758.T"),
+    );
     const data = await res.json();
 
     expect(mockGetQuotes).toHaveBeenCalledWith(["7203.T", "6758.T"]);
     expect(data).toHaveLength(2);
-  });
-
-  it("symbols パラメータで指定銘柄のみ返す", async () => {
-    mockGetQuotes.mockResolvedValue([sampleQuotes[0]]);
-
-    const res = await GET(
-      createRequest("/api/stocks/quotes?symbols=7203.T"),
-    );
-    const data = await res.json();
-
-    expect(mockGetQuotes).toHaveBeenCalledWith(["7203.T"]);
-    expect(data).toHaveLength(1);
   });
 
   it("100件超の symbols で 400 を返す", async () => {
@@ -74,6 +65,11 @@ describe("GET /api/stocks/quotes", () => {
       createRequest(`/api/stocks/quotes?symbols=${symbols}`),
     );
 
+    expect(res.status).toBe(400);
+  });
+
+  it("空文字 symbols で 400 を返す", async () => {
+    const res = await GET(createRequest("/api/stocks/quotes?symbols="));
     expect(res.status).toBe(400);
   });
 });

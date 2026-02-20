@@ -18,9 +18,14 @@ function computeRanking(quotes: StockQuote[], count: number): MarketRanking {
   };
 }
 
-export function useMarketRanking(count: number = 5) {
+export function useMarketRanking(symbols: string[], count: number = 5) {
+  const key =
+    symbols.length > 0
+      ? `/api/stocks/quotes?symbols=${symbols.join(",")}`
+      : null;
+
   const { data, error, isLoading, mutate } = useSWR<StockQuote[]>(
-    "/api/stocks/quotes",
+    key,
     fetcher,
     { dedupingInterval: 60_000 },
   );
@@ -29,5 +34,7 @@ export function useMarketRanking(count: number = 5) {
     ? computeRanking(data, count)
     : undefined;
 
-  return { ranking, error, isLoading, refresh: mutate };
+  const isEmpty = symbols.length === 0;
+
+  return { ranking, error, isLoading, refresh: mutate, isEmpty };
 }
