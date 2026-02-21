@@ -19,10 +19,10 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(articles);
   } catch (error) {
     console.error("News fetch error:", error);
-    const message =
-      error instanceof Error && error.message.includes("FINLIGHT_API_KEY")
-        ? "FINLIGHT_API_KEY が設定されていません"
-        : "ニュースの取得に失敗しました";
-    return NextResponse.json({ error: message }, { status: 500 });
+    const detail = error instanceof Error ? error.message : String(error);
+    return NextResponse.json(
+      { error: `ニュースの取得に失敗しました: ${detail}` },
+      { status: 500 },
+    );
   }
 }
