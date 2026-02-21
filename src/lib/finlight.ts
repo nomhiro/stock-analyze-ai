@@ -26,9 +26,9 @@ export async function searchArticles(
     },
     body: JSON.stringify({
       query: params.query,
-      language: params.language || "ja",
+      ...(params.language && { language: params.language }),
       pageSize: params.limit || 20,
-      from: params.from,
+      ...(params.from && { from: params.from }),
     }),
   });
 
@@ -42,13 +42,25 @@ export async function searchArticles(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const data: any = await res.json();
 
-  const articles = data.articles || data || [];
+  console.log(
+    "Finlight API response keys:",
+    typeof data === "object" && data !== null ? Object.keys(data) : typeof data,
+  );
+
+  // v2 API: レスポンスは { articles: [...] } 形式
+  const raw = data.articles ?? (Array.isArray(data) ? data : []);
+
+  console.log("Finlight articles count:", raw.length);
+  if (raw.length > 0) {
+    console.log("Finlight first article keys:", Object.keys(raw[0]));
+  }
+
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  return articles.map((a: any) => ({
+  return raw.map((a: any) => ({
     title: a.title || "",
-    summary: a.description || a.summary || "",
-    source: a.source?.name || a.source || "",
-    url: a.url || a.sourceUrl || "",
+    summary: a.summary || a.description || "",
+    source: a.source || "",
+    url: a.link || a.url || a.sourceUrl || "",
     publishedAt: a.publishDate || a.publishedAt || a.published_at || "",
     sentiment: a.sentiment || undefined,
   }));
