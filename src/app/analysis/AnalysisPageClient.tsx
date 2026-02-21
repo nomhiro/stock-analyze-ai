@@ -9,12 +9,14 @@ import { StockSearchBar } from "@/components/stocks/StockSearchBar";
 import { Tabs } from "@/components/ui/Tabs";
 import { AnalysisPanel } from "@/components/analysis/AnalysisPanel";
 import { TrendThemeCard } from "@/components/analysis/TrendThemeCard";
+import { NewsSelector } from "@/components/analysis/NewsSelector";
 import { Loading } from "@/components/ui/Loading";
 import { useStockQuote } from "@/hooks/useStockQuote";
 import { useStockHistory } from "@/hooks/useStockHistory";
 import { useAnalysis } from "@/hooks/useAnalysis";
 import type { AnalysisType } from "@/lib/types/analysis";
 import type { NewsMappingTheme } from "@/lib/types/analysis";
+import type { NewsArticle } from "@/lib/types/news";
 
 export function AnalysisPageClient() {
   const searchParams = useSearchParams();
@@ -28,6 +30,7 @@ export function AnalysisPageClient() {
 
   const stockAnalysis = useAnalysis();
   const trendAnalysis = useAnalysis();
+  const newsAnalysis = useAnalysis();
 
   const [trendUrl, setTrendUrl] = useState("");
   const [trendText, setTrendText] = useState("");
@@ -127,6 +130,30 @@ export function AnalysisPageClient() {
   }
 
   const hasTrendInput = trendUrl.trim() || trendText.trim();
+
+  const handleRunNewsAnalysis = (articles: NewsArticle[]) => {
+    const mapped = articles.map((a) => ({
+      title: a.title,
+      summary: a.summary,
+      source: a.source,
+      date: a.publishedAt,
+    }));
+    newsAnalysis.runAnalysis("/api/analysis/news-mapping", { articles: mapped });
+  };
+
+  // Parse news analysis themes from result
+  let newsThemes: NewsMappingTheme[] = [];
+  if (newsAnalysis.result) {
+    try {
+      const jsonMatch = newsAnalysis.result.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        const parsed = JSON.parse(jsonMatch[0]);
+        newsThemes = parsed.themes || [];
+      }
+    } catch {
+      // not ready yet
+    }
+  }
 
   const stockAnalysisTab = (
     <div className="space-y-4">
@@ -266,6 +293,39 @@ export function AnalysisPageClient() {
     </div>
   );
 
+  const newsAnalysisTab = (
+    <div className="space-y-4">
+      <NewsSelector
+        onAnalyze={handleRunNewsAnalysis}
+        isAnalyzing={newsAnalysis.isLoading}
+      />
+
+      {newsAnalysis.isLoading && !newsAnalysis.result && (
+        <Loading text="ニュースを分析中..." />
+      )}
+
+      {newsAnalysis.error && (
+        <p className="text-sm text-negative">{newsAnalysis.error}</p>
+      )}
+
+      {newsThemes.length > 0 && (
+        <div className="space-y-3">
+          {newsThemes.map((theme, i) => (
+            <TrendThemeCard key={i} theme={theme} />
+          ))}
+        </div>
+      )}
+
+      {newsAnalysis.result && newsThemes.length === 0 && (
+        <AnalysisPanel
+          result={newsAnalysis.result}
+          isLoading={newsAnalysis.isLoading}
+          error={null}
+        />
+      )}
+    </div>
+  );
+
   return (
     <div className="space-y-4">
       <h1 className="text-2xl font-bold">AI分析</h1>
@@ -274,6 +334,7 @@ export function AnalysisPageClient() {
         tabs={[
           { id: "stock", label: "銘柄分析", content: stockAnalysisTab },
           { id: "trend", label: "トレンド分析", content: trendAnalysisTab },
+          { id: "news", label: "ニュース分析", content: newsAnalysisTab },
         ]}
         defaultTab={symbol ? "stock" : undefined}
       />
