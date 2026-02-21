@@ -48,7 +48,7 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error("TSE stocks update error:", error);
     const message =
-      error instanceof Error && error.code === "EROFS"
+      error instanceof Error && (error as NodeJS.ErrnoException).code === "EROFS"
         ? "本番環境ではファイルの書き込みができません。開発環境で実行してください。"
         : "TSE銘柄データの更新に失敗しました";
     return NextResponse.json({ error: message }, { status: 500 });
