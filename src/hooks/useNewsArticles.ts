@@ -20,7 +20,10 @@ export function useNewsArticles() {
           body: JSON.stringify({ query, language, limit }),
         });
 
-        if (!res.ok) throw new Error("ニュースの取得に失敗しました");
+        if (!res.ok) {
+          const errData = await res.json().catch(() => ({}));
+          throw new Error(errData.error || "ニュースの取得に失敗しました");
+        }
 
         const data = await res.json();
         setArticles(Array.isArray(data) ? data : []);
