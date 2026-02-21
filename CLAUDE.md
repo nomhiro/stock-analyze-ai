@@ -76,7 +76,7 @@ npm run test:coverage           # カバレッジレポート
 - 通貨フォーマットは `src/lib/utils/formatters.ts` の既存ヘルパーを使う
 - 東証銘柄シンボルは `.T` サフィックス付き（例: `7203.T`）
 - Azure OpenAI の GPT-5 系は `temperature` パラメータ非対応（設定しないこと）
-- AI 分析の `max_tokens` は 4096
+- AI 分析の `max_completion_tokens` は 4096
 - API Route のレスポンスにはキャッシュ無効化ヘッダーが自動付与される（`next.config.ts`）
 
 ## デプロイ

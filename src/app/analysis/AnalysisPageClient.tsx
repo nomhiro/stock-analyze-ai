@@ -5,6 +5,7 @@ import { useSearchParams } from "next/navigation";
 import { Play } from "lucide-react";
 import { Disclaimer } from "@/components/ui/Disclaimer";
 import { Button } from "@/components/ui/Button";
+import { StockSearchBar } from "@/components/stocks/StockSearchBar";
 import { Tabs } from "@/components/ui/Tabs";
 import { AnalysisPanel } from "@/components/analysis/AnalysisPanel";
 import { TrendThemeCard } from "@/components/analysis/TrendThemeCard";
@@ -12,7 +13,6 @@ import { Loading } from "@/components/ui/Loading";
 import { useStockQuote } from "@/hooks/useStockQuote";
 import { useStockHistory } from "@/hooks/useStockHistory";
 import { useAnalysis } from "@/hooks/useAnalysis";
-import { useNewsArticles } from "@/hooks/useNewsArticles";
 import type { AnalysisType } from "@/lib/types/analysis";
 import type { NewsMappingTheme } from "@/lib/types/analysis";
 
@@ -28,7 +28,10 @@ export function AnalysisPageClient() {
 
   const stockAnalysis = useAnalysis();
   const trendAnalysis = useAnalysis();
-  const { articles, isLoading: newsLoading, fetchArticles } = useNewsArticles();
+
+  const [trendUrl, setTrendUrl] = useState("");
+  const [trendText, setTrendText] = useState("");
+  const [fetchingContent, setFetchingContent] = useState(false);
 
   useEffect(() => {
     if (initialSymbol) setSymbol(initialSymbol);
@@ -68,23 +71,46 @@ export function AnalysisPageClient() {
   };
 
   const handleRunTrendAnalysis = async () => {
-    await fetchArticles("日本 経済 株式 テクノロジー", "ja", 15);
-  };
+    const url = trendUrl.trim();
+    const text = trendText.trim();
+    if (!url && !text) return;
 
-  // When articles are fetched, run the mapping
-  useEffect(() => {
-    if (articles.length > 0 && !trendAnalysis.isLoading) {
-      trendAnalysis.runAnalysis("/api/analysis/news-mapping", {
-        articles: articles.map((a) => ({
-          title: a.title,
-          summary: a.summary,
-          source: a.source,
-          date: a.publishedAt,
-        })),
-      });
+    let urlContent = "";
+    let sourceUrl: string | undefined;
+
+    if (url) {
+      setFetchingContent(true);
+      try {
+        const res = await fetch("/api/fetch-content", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ url }),
+        });
+
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}));
+          throw new Error(err.error || "ページの取得に失敗しました");
+        }
+
+        const data = await res.json();
+        urlContent = data.content;
+        sourceUrl = data.url;
+      } catch (err) {
+        setFetchingContent(false);
+        trendAnalysis.reset();
+        return;
+      }
+      setFetchingContent(false);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [articles]);
+
+    const parts = [urlContent, text].filter(Boolean);
+    const content = parts.join("\n\n---\n\n");
+
+    trendAnalysis.runAnalysis("/api/analysis/trend-mapping", {
+      content,
+      sourceUrl,
+    });
+  };
 
   // Parse trend themes from result
   let trendThemes: NewsMappingTheme[] = [];
@@ -100,18 +126,20 @@ export function AnalysisPageClient() {
     }
   }
 
+  const hasTrendInput = trendUrl.trim() || trendText.trim();
+
   const stockAnalysisTab = (
     <div className="space-y-4">
       {/* Symbol input */}
       <div className="flex flex-wrap items-end gap-3">
         <div>
           <label className="mb-1 block text-xs text-muted">対象銘柄</label>
-          <input
-            type="text"
-            value={symbol}
-            onChange={(e) => setSymbol(e.target.value)}
-            placeholder="例: 7203.T"
-            className="rounded-lg border border-card-border bg-card px-3 py-2 text-sm focus:border-accent focus:outline-none"
+          <StockSearchBar
+            defaultValue={symbol}
+            onSelect={(result) => setSymbol(result.symbol)}
+            onChange={(v) => setSymbol(v)}
+            placeholder="例: 7203.T（銘柄コードまたは企業名で検索）"
+            className="max-w-xs"
           />
         </div>
 
@@ -123,8 +151,8 @@ export function AnalysisPageClient() {
               onClick={() => setAnalysisType(type)}
               className={`rounded-md px-3 py-2 text-sm font-medium transition-colors ${
                 analysisType === type
-                  ? "bg-accent text-white"
-                  : "bg-card-border/30 text-muted hover:text-foreground"
+                  ? "bg-accent/15 text-accent border border-accent"
+                  : "bg-card-border/30 text-muted hover:text-foreground border border-transparent"
               }`}
             >
               {type === "short-term" ? "短期 (1-5日)" : "長期 (6ヶ月〜)"}
@@ -169,23 +197,52 @@ export function AnalysisPageClient() {
 
   const trendAnalysisTab = (
     <div className="space-y-4">
+      {/* URL input */}
+      <div>
+        <label className="mb-1 block text-xs text-muted">
+          URL（ページ内容を自動取得します）
+        </label>
+        <input
+          type="text"
+          value={trendUrl}
+          onChange={(e) => setTrendUrl(e.target.value)}
+          placeholder="https://example.com/news/article"
+          className="w-full rounded-lg border border-card-border bg-card px-3 py-2 text-sm focus:border-accent focus:outline-none"
+        />
+      </div>
+
+      {/* Text input */}
+      <div>
+        <label className="mb-1 block text-xs text-muted">
+          テキスト（分析したい内容を貼り付け）
+        </label>
+        <textarea
+          value={trendText}
+          onChange={(e) => setTrendText(e.target.value)}
+          placeholder="分析したいニュース記事やレポートのテキストを貼り付けてください"
+          rows={6}
+          className="w-full resize-y rounded-lg border border-card-border bg-card px-3 py-2 text-sm focus:border-accent focus:outline-none"
+        />
+      </div>
+
       <Button
         onClick={handleRunTrendAnalysis}
-        disabled={newsLoading || trendAnalysis.isLoading}
+        disabled={!hasTrendInput || fetchingContent || trendAnalysis.isLoading}
       >
         <Play className="h-4 w-4" />
-        最新ニュースからトレンド分析
+        トレンド分析を実行
       </Button>
 
-      {(newsLoading || trendAnalysis.isLoading) && !trendAnalysis.result && (
-        <Loading
-          text={
-            newsLoading
-              ? "ニュースを取得中..."
-              : "トレンドを分析中..."
-          }
-        />
-      )}
+      {(fetchingContent || trendAnalysis.isLoading) &&
+        !trendAnalysis.result && (
+          <Loading
+            text={
+              fetchingContent
+                ? "ページ内容を取得中..."
+                : "トレンドを分析中..."
+            }
+          />
+        )}
 
       {trendAnalysis.error && (
         <p className="text-sm text-negative">{trendAnalysis.error}</p>

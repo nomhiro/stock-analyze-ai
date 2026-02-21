@@ -28,7 +28,7 @@ export async function streamAnalysis(
       { role: "system", content: systemPrompt },
       { role: "user", content: userPrompt },
     ],
-    max_tokens: 4096,
+    max_completion_tokens: 4096,
     // GPT-5 series: temperature is not supported
     stream: true,
   });

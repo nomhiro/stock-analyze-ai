@@ -3,15 +3,35 @@
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { Search } from "lucide-react";
+import { useStockSearch } from "@/hooks/useStockSearch";
 import type { StockSearchResult } from "@/lib/types/stock";
 
-export function StockSearchBar() {
-  const [query, setQuery] = useState("");
-  const [results, setResults] = useState<StockSearchResult[]>([]);
+interface StockSearchBarProps {
+  /** 選択時のコールバック。提供時は router.push の代わりに呼ばれる。 */
+  onSelect?: (result: StockSearchResult) => void;
+  /** 入力変更時のコールバック。親の state と同期するために使用。 */
+  onChange?: (value: string) => void;
+  /** 入力の初期値。 */
+  defaultValue?: string;
+  /** カスタムプレースホルダー。 */
+  placeholder?: string;
+  /** 外側 div に追加する CSS クラス。 */
+  className?: string;
+}
+
+export function StockSearchBar({
+  onSelect,
+  onChange,
+  defaultValue = "",
+  placeholder = "銘柄コードまたは企業名を検索...",
+  className,
+}: StockSearchBarProps = {}) {
+  const [query, setQuery] = useState(defaultValue);
   const [isOpen, setIsOpen] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
   const ref = useRef<HTMLDivElement>(null);
+
+  const { results, isLoading } = useStockSearch(query);
 
   useEffect(() => {
     const handler = (e: MouseEvent) => {
@@ -23,46 +43,34 @@ export function StockSearchBar() {
     return () => document.removeEventListener("mousedown", handler);
   }, []);
 
-  useEffect(() => {
-    if (query.length < 1) {
-      setResults([]);
-      return;
-    }
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newValue = e.target.value;
+    setQuery(newValue);
+    setIsOpen(true);
+    onChange?.(newValue);
+  };
 
-    const timeout = setTimeout(async () => {
-      setIsLoading(true);
-      try {
-        const res = await fetch(
-          `/api/stocks/search?q=${encodeURIComponent(query)}`,
-        );
-        const data = await res.json();
-        setResults(Array.isArray(data) ? data : []);
-        setIsOpen(true);
-      } catch {
-        setResults([]);
-      } finally {
-        setIsLoading(false);
-      }
-    }, 300);
-
-    return () => clearTimeout(timeout);
-  }, [query]);
-
-  const handleSelect = (symbol: string) => {
+  const handleSelect = (result: StockSearchResult) => {
     setIsOpen(false);
-    setQuery("");
-    router.push(`/stocks/${encodeURIComponent(symbol)}`);
+    if (onSelect) {
+      setQuery(result.symbol);
+      onChange?.(result.symbol);
+      onSelect(result);
+    } else {
+      setQuery("");
+      router.push(`/stocks/${encodeURIComponent(result.symbol)}`);
+    }
   };
 
   return (
-    <div ref={ref} className="relative w-full max-w-lg">
+    <div ref={ref} className={`relative w-full max-w-lg ${className ?? ""}`}>
       <div className="flex items-center rounded-lg border border-card-border bg-card px-3">
         <Search className="h-4 w-4 text-muted" />
         <input
           type="text"
           value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder="銘柄コードまたは企業名を検索..."
+          onChange={handleInputChange}
+          placeholder={placeholder}
           className="w-full bg-transparent px-2 py-2.5 text-sm text-foreground placeholder:text-muted focus:outline-none"
         />
         {isLoading && (
@@ -75,7 +83,7 @@ export function StockSearchBar() {
           {results.slice(0, 10).map((r) => (
             <button
               key={r.symbol}
-              onClick={() => handleSelect(r.symbol)}
+              onClick={() => handleSelect(r)}
               className="flex w-full items-center justify-between px-3 py-2 text-left text-sm hover:bg-card-border/30"
             >
               <div>
