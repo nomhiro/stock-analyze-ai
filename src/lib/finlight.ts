@@ -1,6 +1,6 @@
 import type { NewsArticle } from "@/lib/types/news";
 
-const FINLIGHT_API_URL = "https://api.finlight.me/v2/articles/search";
+const FINLIGHT_API_URL = "https://api.finlight.me/v2/articles";
 
 interface FinlightSearchParams {
   query: string;
@@ -21,30 +21,35 @@ export async function searchArticles(
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      Authorization: `Bearer ${apiKey}`,
+      Accept: "application/json",
+      "X-API-KEY": apiKey,
     },
     body: JSON.stringify({
       query: params.query,
       language: params.language || "ja",
-      limit: params.limit || 20,
+      pageSize: params.limit || 20,
       from: params.from,
     }),
   });
 
   if (!res.ok) {
-    throw new Error(`Finlight API error: ${res.status}`);
+    const errorBody = await res.text().catch(() => "");
+    throw new Error(
+      `Finlight API error: ${res.status} ${res.statusText}${errorBody ? ` - ${errorBody}` : ""}`,
+    );
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const data: any = await res.json();
 
+  const articles = data.articles || data || [];
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  return (data.articles || data || []).map((a: any) => ({
+  return articles.map((a: any) => ({
     title: a.title || "",
     summary: a.description || a.summary || "",
     source: a.source?.name || a.source || "",
-    url: a.url || "",
-    publishedAt: a.publishedAt || a.published_at || "",
+    url: a.url || a.sourceUrl || "",
+    publishedAt: a.publishDate || a.publishedAt || a.published_at || "",
     sentiment: a.sentiment || undefined,
   }));
 }
