@@ -16,6 +16,7 @@ export async function POST(request: NextRequest) {
     }
 
     const articles = await searchArticles({ query, language, limit, from });
+    console.log(`News API: query="${query}" language="${language}" → ${articles.length} articles`);
     return NextResponse.json(articles);
   } catch (error) {
     console.error("News fetch error:", error);
