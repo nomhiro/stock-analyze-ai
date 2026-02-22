@@ -84,6 +84,7 @@ export interface NewsMappingTheme {
 }
 
 export interface NewsMappingResult {
+  newsSummary: string;
   themes: NewsMappingTheme[];
   overallMarketSentiment: string;
   keyRisks: string[];

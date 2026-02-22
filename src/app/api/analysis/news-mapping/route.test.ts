@@ -93,6 +93,28 @@ describe("POST /api/analysis/news-mapping", () => {
     expect(userPrompt).toContain("概要2");
   });
 
+  it("プロンプトに newsSummary フィールドが含まれる", async () => {
+    const mockStream = new ReadableStream();
+    mockStreamAnalysis.mockResolvedValue(mockStream);
+
+    await POST(
+      createRequest({
+        articles: [
+          {
+            title: "テスト記事",
+            summary: "テスト概要",
+            source: "テストソース",
+            date: "2026-02-21",
+          },
+        ],
+      }),
+    );
+
+    const userPrompt = mockStreamAnalysis.mock.calls[0][1];
+    expect(userPrompt).toContain("newsSummary");
+    expect(userPrompt).toContain("要約");
+  });
+
   it("streamAnalysis のエラーで 500 を返す", async () => {
     mockStreamAnalysis.mockRejectedValue(new Error("API error"));
 
