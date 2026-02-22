@@ -1,65 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { Card } from "@/components/ui/Card";
 import { Loading } from "@/components/ui/Loading";
 import { formatPercent, formatMarketTime } from "@/lib/utils/formatters";
-
-interface IndexData {
-  symbol: string;
-  name: string;
-  price: number;
-  change: number;
-  changePercent: number;
-  regularMarketTime?: string;
-}
-
-const indices = [
-  { symbol: "^N225", name: "日経225" },
-  { symbol: "^TOPX", name: "TOPIX" },
-  { symbol: "^GSPC", name: "S&P 500" },
-  { symbol: "USDJPY=X", name: "USD/JPY" },
-];
+import { useMarketOverview } from "@/hooks/useMarketOverview";
 
 export function MarketOverview() {
-  const [data, setData] = useState<IndexData[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-
-  const fetchData = async () => {
-    setIsLoading(true);
-    try {
-      const results = await Promise.all(
-        indices.map(async (idx) => {
-          const res = await fetch(
-            `/api/stocks/quote?symbol=${encodeURIComponent(idx.symbol)}`,
-          );
-          if (!res.ok) return null;
-          const q = await res.json();
-          return {
-            symbol: idx.symbol,
-            name: idx.name,
-            price: q.price ?? 0,
-            change: q.change ?? 0,
-            changePercent: q.changePercent ?? 0,
-            regularMarketTime: q.regularMarketTime,
-          } as IndexData;
-        }),
-      );
-      setData(results.filter((r): r is IndexData => r !== null));
-    } catch {
-      // ignore
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchData();
-  }, []);
-
-  // 日本市場（日経225）のマーケット時刻を優先して取得
-  const marketTime = data.find((d) => d.symbol === "^N225")?.regularMarketTime
-    ?? data.find((d) => d.regularMarketTime)?.regularMarketTime;
+  const { overview, marketTime, isLoading, refresh } = useMarketOverview();
 
   return (
     <Card title="市場概況">
@@ -73,7 +20,7 @@ export function MarketOverview() {
             </p>
           )}
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-            {data.map((idx) => {
+            {overview?.map((idx) => {
               const isPositive = idx.change >= 0;
               return (
                 <div key={idx.symbol} className="rounded-lg bg-background p-3">
@@ -94,9 +41,9 @@ export function MarketOverview() {
           </div>
         </>
       )}
-      {!isLoading && data.length > 0 && (
+      {!isLoading && overview && (
         <button
-          onClick={fetchData}
+          onClick={() => refresh()}
           className="mt-3 text-xs text-muted hover:text-foreground"
         >
           データを更新
