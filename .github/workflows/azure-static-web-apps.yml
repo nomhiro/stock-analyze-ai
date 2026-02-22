@@ -32,6 +32,7 @@ jobs:
           AZURE_OPENAI_API_VERSION: ${{ secrets.AZURE_OPENAI_API_VERSION }}
           AZURE_OPENAI_DEPLOYMENT_NAME: ${{ secrets.AZURE_OPENAI_DEPLOYMENT_NAME }}
           FINLIGHT_API_KEY: ${{ secrets.FINLIGHT_API_KEY }}
+          GNEWS_API_KEY: ${{ secrets.GNEWS_API_KEY }}
           NEXT_PUBLIC_APP_URL: "https://mango-sand-0acc94400.4.azurestaticapps.net"
 
   close_pull_request:
