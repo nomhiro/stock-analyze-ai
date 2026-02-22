@@ -75,13 +75,12 @@ export async function getQuotes(symbols: string[]): Promise<StockQuote[]> {
     batches.push(symbols.slice(i, i + BATCH_SIZE));
   }
 
-  const batchResults = await Promise.all(
-    batches.map(async (batch) => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const results = (await getYahooFinance().quote(batch)) as any[];
-      return results.map((quote) => mapQuote(quote));
-    }),
-  );
+  const batchResults: StockQuote[][] = [];
+  for (const batch of batches) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const results = (await getYahooFinance().quote(batch)) as any[];
+    batchResults.push(results.map((quote) => mapQuote(quote)));
+  }
 
   return batchResults.flat();
 }
