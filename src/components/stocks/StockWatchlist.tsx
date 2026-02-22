@@ -13,9 +13,10 @@ const fetcher = (url: string) => fetch(url).then((r) => r.json());
 interface StockWatchlistProps {
   symbols: string[];
   onRemove: (symbol: string) => void;
+  onAdd: (symbol: string) => void;
 }
 
-export function StockWatchlist({ symbols, onRemove }: StockWatchlistProps) {
+export function StockWatchlist({ symbols, onRemove, onAdd }: StockWatchlistProps) {
   const { data: quotes } = useSWR<StockQuote[]>(
     symbols.length > 0
       ? `/api/stocks/quotes?symbols=${symbols.join(",")}`
@@ -33,7 +34,10 @@ export function StockWatchlist({ symbols, onRemove }: StockWatchlistProps) {
           <p className="text-sm text-muted">
             ウォッチリストに銘柄がありません。銘柄を検索して追加してください。
           </p>
-          <StockSearchBar />
+          <StockSearchBar
+            onSelect={(result) => onAdd(result.symbol)}
+            placeholder="銘柄を追加..."
+          />
         </div>
       ) : (
         <div className="space-y-1">
@@ -76,6 +80,12 @@ export function StockWatchlist({ symbols, onRemove }: StockWatchlistProps) {
               </div>
             );
           })}
+          <div className="mt-3 border-t border-card-border pt-3">
+            <StockSearchBar
+              onSelect={(result) => onAdd(result.symbol)}
+              placeholder="銘柄を追加..."
+            />
+          </div>
         </div>
       )}
     </Card>

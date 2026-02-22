@@ -12,7 +12,7 @@ import { MAJOR_TSE_SYMBOLS } from "@/lib/data/major-stocks";
 export type ViewMode = "all" | "watchlist";
 
 export default function DashboardPage() {
-  const { symbols, remove } = useWatchlist();
+  const { symbols, add, remove } = useWatchlist();
   const [viewMode, setViewMode] = useState<ViewMode>("watchlist");
 
   const rankingSymbols =
@@ -51,7 +51,7 @@ export default function DashboardPage() {
       </div>
       <MarketRanking symbols={rankingSymbols} viewMode={viewMode} />
       {viewMode === "watchlist" && (
-        <StockWatchlist symbols={symbols} onRemove={remove} />
+        <StockWatchlist symbols={symbols} onRemove={remove} onAdd={add} />
       )}
     </div>
   );
