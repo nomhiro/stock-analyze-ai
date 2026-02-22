@@ -13,6 +13,7 @@ describe("NewsSelector article mapping logic", () => {
       url: "https://example.com/1",
       publishedAt: "2026-02-21T09:00:00Z",
       sentiment: "positive",
+      provider: "finlight",
     },
     {
       title: "円安が進行",
@@ -21,6 +22,7 @@ describe("NewsSelector article mapping logic", () => {
       url: "https://example.com/2",
       publishedAt: "2026-02-20T15:00:00Z",
       sentiment: "negative",
+      provider: "gnews",
     },
   ];
 
@@ -47,7 +49,7 @@ describe("NewsSelector article mapping logic", () => {
     });
   });
 
-  it("マッピング結果に url と sentiment が含まれない", () => {
+  it("マッピング結果に url, sentiment, provider が含まれない", () => {
     const mapped = sampleArticles.map((a) => ({
       title: a.title,
       summary: a.summary,
@@ -58,6 +60,7 @@ describe("NewsSelector article mapping logic", () => {
     expect(mapped[0]).not.toHaveProperty("url");
     expect(mapped[0]).not.toHaveProperty("sentiment");
     expect(mapped[0]).not.toHaveProperty("publishedAt");
+    expect(mapped[0]).not.toHaveProperty("provider");
     expect(mapped[0]).toHaveProperty("date");
   });
 
@@ -101,5 +104,23 @@ describe("NewsSelector default query", () => {
     const query = "   ";
     const q = query.trim() || "日本 株式 市場";
     expect(q).toBe("日本 株式 市場");
+  });
+});
+
+describe("NewsSelector provider logic", () => {
+  it("provider フィールドで記事のソースを識別できる", () => {
+    const articles: NewsArticle[] = [
+      { title: "A", summary: "", source: "S1", url: "", publishedAt: "", provider: "finlight" },
+      { title: "B", summary: "", source: "S2", url: "", publishedAt: "", provider: "gnews" },
+      { title: "C", summary: "", source: "S3", url: "", publishedAt: "" },
+    ];
+
+    const finlightArticles = articles.filter((a) => a.provider === "finlight");
+    const gnewsArticles = articles.filter((a) => a.provider === "gnews");
+    const unknownArticles = articles.filter((a) => !a.provider);
+
+    expect(finlightArticles).toHaveLength(1);
+    expect(gnewsArticles).toHaveLength(1);
+    expect(unknownArticles).toHaveLength(1);
   });
 });

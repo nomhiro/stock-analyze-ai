@@ -63,5 +63,6 @@ export async function searchArticles(
     url: a.link || a.url || a.sourceUrl || "",
     publishedAt: a.publishDate || a.publishedAt || a.published_at || "",
     sentiment: a.sentiment || undefined,
+    provider: "finlight" as const,
   }));
 }

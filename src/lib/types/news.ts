@@ -1,3 +1,5 @@
+export type NewsProvider = "finlight" | "gnews";
+
 export interface NewsArticle {
   title: string;
   summary: string;
@@ -5,4 +7,5 @@ export interface NewsArticle {
   url: string;
   publishedAt: string;
   sentiment?: "positive" | "negative" | "neutral";
+  provider?: NewsProvider;
 }

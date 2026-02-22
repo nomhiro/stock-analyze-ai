@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback } from "react";
-import type { NewsArticle } from "@/lib/types/news";
+import type { NewsArticle, NewsProvider } from "@/lib/types/news";
 
 export function useNewsArticles() {
   const [articles, setArticles] = useState<NewsArticle[]>([]);
@@ -9,7 +9,12 @@ export function useNewsArticles() {
   const [error, setError] = useState<string | null>(null);
 
   const fetchArticles = useCallback(
-    async (query: string, language = "ja", limit = 20) => {
+    async (
+      query: string,
+      language = "ja",
+      limit = 20,
+      provider: NewsProvider | "all" = "finlight",
+    ) => {
       setIsLoading(true);
       setError(null);
 
@@ -17,7 +22,7 @@ export function useNewsArticles() {
         const res = await fetch("/api/news/articles", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ query, language, limit }),
+          body: JSON.stringify({ query, language, limit, provider }),
         });
 
         if (!res.ok) {

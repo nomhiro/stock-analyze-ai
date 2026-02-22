@@ -1,31 +1,40 @@
 "use client";
 
 import { useState, useCallback } from "react";
-import { Search, Newspaper, CheckSquare, Square } from "lucide-react";
+import { Search, Newspaper, CheckSquare, Square, Globe } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { Loading } from "@/components/ui/Loading";
 import { useNewsArticles } from "@/hooks/useNewsArticles";
-import type { NewsArticle } from "@/lib/types/news";
+import type { NewsArticle, NewsProvider } from "@/lib/types/news";
 
 interface NewsSelectorProps {
   onAnalyze: (articles: NewsArticle[]) => void;
   isAnalyzing: boolean;
 }
 
+type ProviderOption = NewsProvider | "all";
+
+const PROVIDER_LABELS: Record<ProviderOption, string> = {
+  finlight: "Finlight（英語/金融）",
+  gnews: "GNews（日本語）",
+  all: "両方",
+};
+
 export function NewsSelector({ onAnalyze, isAnalyzing }: NewsSelectorProps) {
   const { articles, isLoading, error, fetchArticles } = useNewsArticles();
   const [query, setQuery] = useState("");
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
   const [hasFetched, setHasFetched] = useState(false);
+  const [provider, setProvider] = useState<ProviderOption>("all");
 
   const handleFetch = useCallback(async () => {
     const q = query.trim() || "日本 株式 市場";
-    await fetchArticles(q, "ja", 20);
+    await fetchArticles(q, "ja", 20, provider);
     setSelectedIds(new Set());
     setHasFetched(true);
-  }, [query, fetchArticles]);
+  }, [query, fetchArticles, provider]);
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
@@ -69,10 +78,41 @@ export function NewsSelector({ onAnalyze, isAnalyzing }: NewsSelectorProps) {
     return "default";
   };
 
+  const providerBadgeVariant = (
+    p?: NewsProvider,
+  ): "default" | "positive" | "warning" => {
+    if (p === "finlight") return "positive";
+    if (p === "gnews") return "warning";
+    return "default";
+  };
+
   const allSelected = articles.length > 0 && selectedIds.size === articles.length;
 
   return (
     <div className="space-y-3">
+      {/* Provider selector */}
+      <div className="flex items-center gap-2">
+        <Globe className="h-4 w-4 text-muted" />
+        <span className="text-xs text-muted">ソース:</span>
+        <div className="flex gap-1">
+          {(Object.entries(PROVIDER_LABELS) as [ProviderOption, string][]).map(
+            ([key, label]) => (
+              <button
+                key={key}
+                onClick={() => setProvider(key)}
+                className={`rounded-md px-2.5 py-1 text-xs transition-colors ${
+                  provider === key
+                    ? "bg-accent text-white"
+                    : "bg-card-border/30 text-muted hover:text-foreground"
+                }`}
+              >
+                {label}
+              </button>
+            ),
+          )}
+        </div>
+      </div>
+
       {/* Search bar */}
       <div className="flex gap-2">
         <div className="relative flex-1">
@@ -165,6 +205,11 @@ export function NewsSelector({ onAnalyze, isAnalyzing }: NewsSelectorProps) {
                       {article.sentiment && (
                         <Badge variant={sentimentVariant(article.sentiment)}>
                           {article.sentiment}
+                        </Badge>
+                      )}
+                      {article.provider && (
+                        <Badge variant={providerBadgeVariant(article.provider)}>
+                          {article.provider}
                         </Badge>
                       )}
                     </div>
