@@ -25,9 +25,9 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  if (symbols.length > 100) {
+  if (symbols.length > 1000) {
     return NextResponse.json(
-      { error: "一度に取得できる銘柄数は100件までです" },
+      { error: "一度に取得できる銘柄数は1000件までです" },
       { status: 400 },
     );
   }

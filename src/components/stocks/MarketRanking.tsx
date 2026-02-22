@@ -6,6 +6,7 @@ import { Card } from "@/components/ui/Card";
 import { Loading } from "@/components/ui/Loading";
 import { useMarketRanking } from "@/hooks/useMarketRanking";
 import { formatPercent } from "@/lib/utils/formatters";
+import type { ViewMode } from "@/app/page";
 import type { StockQuote } from "@/lib/types/stock";
 
 function RankingList({
@@ -56,15 +57,16 @@ function RankingList({
 
 interface MarketRankingProps {
   symbols: string[];
+  viewMode?: ViewMode;
 }
 
-export function MarketRanking({ symbols }: MarketRankingProps) {
+export function MarketRanking({ symbols, viewMode = "watchlist" }: MarketRankingProps) {
   const { ranking, isLoading, refresh, isEmpty } = useMarketRanking(
     symbols,
     5,
   );
 
-  if (isEmpty) {
+  if (isEmpty && viewMode === "watchlist") {
     return (
       <Card title="ウォッチリスト ランキング">
         <p className="text-sm text-muted">
