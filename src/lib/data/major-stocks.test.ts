@@ -16,7 +16,7 @@ describe("MAJOR_TSE_SYMBOLS", () => {
     expect(MAJOR_TSE_SYMBOLS.length).toBe(50);
   });
 
-  it("API上限の100件以下である", () => {
-    expect(MAJOR_TSE_SYMBOLS.length).toBeLessThanOrEqual(100);
+  it("API上限の1000件以下である", () => {
+    expect(MAJOR_TSE_SYMBOLS.length).toBeLessThanOrEqual(1000);
   });
 });
