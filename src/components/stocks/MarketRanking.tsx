@@ -5,7 +5,7 @@ import { TrendingUp, TrendingDown } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import { Loading } from "@/components/ui/Loading";
 import { useMarketRanking } from "@/hooks/useMarketRanking";
-import { formatPercent } from "@/lib/utils/formatters";
+import { formatPercent, formatMarketTime } from "@/lib/utils/formatters";
 import type { ViewMode } from "@/app/page";
 import type { StockQuote } from "@/lib/types/stock";
 
@@ -61,7 +61,7 @@ interface MarketRankingProps {
 }
 
 export function MarketRanking({ symbols, viewMode = "watchlist" }: MarketRankingProps) {
-  const { ranking, isLoading, refresh, isEmpty } = useMarketRanking(
+  const { ranking, isLoading, refresh, isEmpty, latestMarketTime } = useMarketRanking(
     symbols,
     5,
   );
@@ -97,10 +97,15 @@ export function MarketRanking({ symbols, viewMode = "watchlist" }: MarketRanking
         )}
       </Card>
       {!isLoading && ranking && (
-        <div className="col-span-full text-right">
+        <div className="col-span-full flex items-center justify-between">
+          {latestMarketTime && (
+            <span className="text-xs text-muted">
+              {formatMarketTime(latestMarketTime)}
+            </span>
+          )}
           <button
             onClick={() => refresh()}
-            className="text-xs text-muted hover:text-foreground"
+            className="ml-auto text-xs text-muted hover:text-foreground"
           >
             データを更新
           </button>
