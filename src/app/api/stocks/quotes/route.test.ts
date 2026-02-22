@@ -59,13 +59,24 @@ describe("GET /api/stocks/quotes", () => {
     expect(data).toHaveLength(2);
   });
 
-  it("100件超の symbols で 400 を返す", async () => {
-    const symbols = Array.from({ length: 101 }, (_, i) => `${i}.T`).join(",");
+  it("1000件超の symbols で 400 を返す", async () => {
+    const symbols = Array.from({ length: 1001 }, (_, i) => `${i}.T`).join(",");
     const res = await GET(
       createRequest(`/api/stocks/quotes?symbols=${symbols}`),
     );
 
     expect(res.status).toBe(400);
+  });
+
+  it("1000件以内の symbols は受け付ける", async () => {
+    mockGetQuotes.mockResolvedValue([]);
+
+    const symbols = Array.from({ length: 1000 }, (_, i) => `${i}.T`).join(",");
+    const res = await GET(
+      createRequest(`/api/stocks/quotes?symbols=${symbols}`),
+    );
+
+    expect(res.status).toBe(200);
   });
 
   it("空文字 symbols で 400 を返す", async () => {

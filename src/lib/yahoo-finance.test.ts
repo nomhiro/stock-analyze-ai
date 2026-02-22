@@ -75,4 +75,39 @@ describe("getQuotes", () => {
     expect(result[1].symbol).toBe("6758.T");
     expect(result[1].price).toBe(3000);
   });
+
+  it("500件超のシンボルをバッチ分割してリクエストする", async () => {
+    const symbols = Array.from({ length: 750 }, (_, i) => `${i}.T`);
+
+    mockQuote.mockImplementation(async (syms: string[]) => {
+      return syms.map((s) => ({
+        ...sampleQuote,
+        symbol: s,
+      }));
+    });
+
+    const result = await getQuotes(symbols);
+
+    expect(result).toHaveLength(750);
+    // 500 + 250 の2バッチに分割される
+    expect(mockQuote).toHaveBeenCalledTimes(2);
+    expect(mockQuote.mock.calls[0][0]).toHaveLength(500);
+    expect(mockQuote.mock.calls[1][0]).toHaveLength(250);
+  });
+
+  it("500件以内なら1回のリクエストで取得する", async () => {
+    const symbols = Array.from({ length: 500 }, (_, i) => `${i}.T`);
+
+    mockQuote.mockImplementation(async (syms: string[]) => {
+      return syms.map((s) => ({
+        ...sampleQuote,
+        symbol: s,
+      }));
+    });
+
+    const result = await getQuotes(symbols);
+
+    expect(result).toHaveLength(500);
+    expect(mockQuote).toHaveBeenCalledTimes(1);
+  });
 });

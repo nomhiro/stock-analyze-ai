@@ -65,13 +65,25 @@ function mapQuote(quote: any, fallbackSymbol?: string): StockQuote {
   };
 }
 
+const BATCH_SIZE = 500;
+
 export async function getQuotes(symbols: string[]): Promise<StockQuote[]> {
   if (symbols.length === 0) return [];
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const results = (await getYahooFinance().quote(symbols)) as any[];
+  const batches: string[][] = [];
+  for (let i = 0; i < symbols.length; i += BATCH_SIZE) {
+    batches.push(symbols.slice(i, i + BATCH_SIZE));
+  }
 
-  return results.map((quote) => mapQuote(quote));
+  const batchResults = await Promise.all(
+    batches.map(async (batch) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const results = (await getYahooFinance().quote(batch)) as any[];
+      return results.map((quote) => mapQuote(quote));
+    }),
+  );
+
+  return batchResults.flat();
 }
 
 export async function getHistory(
