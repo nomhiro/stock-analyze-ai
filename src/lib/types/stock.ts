@@ -19,6 +19,7 @@ export interface StockQuote {
   fiftyTwoWeekHigh?: number;
   fiftyTwoWeekLow?: number;
   epsTrailingTwelveMonths?: number;
+  regularMarketTime?: string;
 }
 
 export interface StockHistoryEntry {

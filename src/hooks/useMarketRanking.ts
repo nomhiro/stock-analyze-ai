@@ -36,5 +36,12 @@ export function useMarketRanking(symbols: string[], count: number = 5) {
 
   const isEmpty = symbols.length === 0;
 
-  return { ranking, error, isLoading, refresh: mutate, isEmpty };
+  // 最新のマーケット時刻を取得（.T 銘柄を優先）
+  const latestMarketTime: string | undefined = data
+    ? (data.find((q) => q.regularMarketTime && q.symbol.endsWith(".T"))
+        ?.regularMarketTime ??
+      data.find((q) => q.regularMarketTime)?.regularMarketTime)
+    : undefined;
+
+  return { ranking, error, isLoading, refresh: mutate, isEmpty, latestMarketTime };
 }

@@ -62,6 +62,9 @@ function mapQuote(quote: any, fallbackSymbol?: string): StockQuote {
       quote,
       "epsTrailingTwelveMonths",
     ) as number | undefined,
+    regularMarketTime: safeGet(quote, "regularMarketTime")
+      ? new Date(safeGet(quote, "regularMarketTime") as string | number).toISOString()
+      : undefined,
   };
 }
 

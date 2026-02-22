@@ -27,6 +27,7 @@ const sampleQuote = {
   currency: "JPY",
   marketState: "REGULAR",
   fullExchangeName: "Tokyo",
+  regularMarketTime: new Date("2026-02-22T06:00:00Z"),
 };
 
 describe("getQuote", () => {
@@ -43,6 +44,17 @@ describe("getQuote", () => {
     expect(result.name).toBe("トヨタ自動車");
     expect(result.price).toBe(2500);
     expect(result.changePercent).toBe(2.04);
+    expect(result.regularMarketTime).toBe("2026-02-22T06:00:00.000Z");
+  });
+
+  it("regularMarketTime が未定義の場合は undefined を返す", async () => {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { regularMarketTime: _removed, ...quoteWithoutTime } = sampleQuote;
+    mockQuote.mockResolvedValue(quoteWithoutTime);
+
+    const result = await getQuote("7203.T");
+
+    expect(result.regularMarketTime).toBeUndefined();
   });
 });
 
