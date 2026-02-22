@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { BrainCircuit, RefreshCw } from "lucide-react";
+import { WatchlistToggleButton } from "@/components/stocks/WatchlistToggleButton";
 import { useStockQuote } from "@/hooks/useStockQuote";
 import { useStockHistory } from "@/hooks/useStockHistory";
 import { CandlestickChart } from "@/components/charts/CandlestickChart";
@@ -81,10 +82,13 @@ export function StockDetailClient({ symbol }: StockDetailClientProps) {
             <Badge>{quote.marketState}</Badge>
           </div>
         </div>
-        <Button variant="ghost" size="sm" onClick={handleRefresh}>
-          <RefreshCw className="h-4 w-4" />
-          更新
-        </Button>
+        <div className="flex items-center gap-1">
+          <WatchlistToggleButton symbol={symbol} size="md" />
+          <Button variant="ghost" size="sm" onClick={handleRefresh}>
+            <RefreshCw className="h-4 w-4" />
+            更新
+          </Button>
+        </div>
       </div>
 
       {/* Price */}

@@ -5,7 +5,7 @@ import { StockWatchlist } from "@/components/stocks/StockWatchlist";
 import { useWatchlist } from "@/hooks/useWatchlist";
 
 export default function StocksPage() {
-  const { symbols, remove } = useWatchlist();
+  const { symbols, add, remove } = useWatchlist();
 
   return (
     <div>
@@ -13,7 +13,7 @@ export default function StocksPage() {
       <StockSearchBar />
 
       <div className="mt-8">
-        <StockWatchlist symbols={symbols} onRemove={remove} />
+        <StockWatchlist symbols={symbols} onRemove={remove} onAdd={add} />
       </div>
     </div>
   );
