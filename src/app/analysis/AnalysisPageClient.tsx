@@ -15,7 +15,8 @@ import { useStockQuote } from "@/hooks/useStockQuote";
 import { useStockHistory } from "@/hooks/useStockHistory";
 import { useAnalysis } from "@/hooks/useAnalysis";
 import type { AnalysisType } from "@/lib/types/analysis";
-import type { NewsMappingTheme } from "@/lib/types/analysis";
+import type { NewsMappingTheme, NewsMappingResult } from "@/lib/types/analysis";
+import { Card } from "@/components/ui/Card";
 import type { NewsArticle } from "@/lib/types/news";
 
 export function AnalysisPageClient() {
@@ -141,14 +142,16 @@ export function AnalysisPageClient() {
     newsAnalysis.runAnalysis("/api/analysis/news-mapping", { articles: mapped });
   };
 
-  // Parse news analysis themes from result
+  // Parse news analysis themes and summary from result
   let newsThemes: NewsMappingTheme[] = [];
+  let newsSummary = "";
   if (newsAnalysis.result) {
     try {
       const jsonMatch = newsAnalysis.result.match(/\{[\s\S]*\}/);
       if (jsonMatch) {
-        const parsed = JSON.parse(jsonMatch[0]);
+        const parsed: Partial<NewsMappingResult> = JSON.parse(jsonMatch[0]);
         newsThemes = parsed.themes || [];
+        newsSummary = parsed.newsSummary || "";
       }
     } catch {
       // not ready yet
@@ -308,6 +311,12 @@ export function AnalysisPageClient() {
         <p className="text-sm text-negative">{newsAnalysis.error}</p>
       )}
 
+      {newsSummary && (
+        <Card title="ニュース要約">
+          <p className="text-sm leading-relaxed">{newsSummary}</p>
+        </Card>
+      )}
+
       {newsThemes.length > 0 && (
         <div className="space-y-3">
           {newsThemes.map((theme, i) => (
@@ -316,7 +325,7 @@ export function AnalysisPageClient() {
         </div>
       )}
 
-      {newsAnalysis.result && newsThemes.length === 0 && (
+      {newsAnalysis.result && newsThemes.length === 0 && !newsSummary && (
         <AnalysisPanel
           result={newsAnalysis.result}
           isLoading={newsAnalysis.isLoading}
